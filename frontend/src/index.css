@@ -1,0 +1,123 @@
+@import "tailwindcss";
+
+@theme {
+  /* Paper: neutral white/gray surfaces (was warm parchment — the mockup's
+     palette calls for a clean white/gray field, not cream) */
+  --color-paper-50: #FFFFFF;
+  --color-paper-100: #F5F5F5;
+  --color-paper-200: #E4E4E4;
+  --color-paper-300: #D1D1D1;
+
+  /* Ink: deep navy — text, headers, sidebar. #002147 is the mockup's exact
+     "Secondary Color / Navy" value. */
+  --color-ink-900: #002147;
+  --color-ink-800: #0A2E5C;
+  --color-ink-700: #163A6E;
+  --color-ink-500: #4A5F7A;
+  --color-ink-300: #676E7B;
+
+  /* Marigold: repointed to Crimson — #A50034 is the mockup's exact
+     "Primary Color". Kept the token name "marigold" so every existing
+     className (bg-marigold-500, text-marigold-700, etc.) picks up the new
+     brand color automatically without touching component files. */
+  --color-marigold-50: #FBE6ED;
+  --color-marigold-200: #E9A6BE;
+  --color-marigold-400: #C43462;
+  --color-marigold-500: #A50034;
+  --color-marigold-600: #8A002B;
+  --color-marigold-700: #8A002B;
+
+  /* Teal: repointed to a collegiate forest green — success/resolved */
+  --color-teal-50: #E8F5EE;
+  --color-teal-200: #A8D9BE;
+  --color-teal-400: #4BAE7C;
+  --color-teal-500: #2E9E63;
+  --color-teal-600: #268453;
+  --color-teal-700: #1F6D45;
+
+  /* Coral: repointed to burnt orange — urgent/destructive/error. Kept
+     visually distinct from the crimson brand color so "primary action"
+     and "danger" never look like the same button. */
+  --color-coral-50: #FBEAE0;
+  --color-coral-200: #F0BC9C;
+  --color-coral-400: #D46A34;
+  --color-coral-500: #C1440E;
+  --color-coral-600: #A83A0C;
+  --color-coral-700: #8F3209;
+
+  /* Gold: new accent token — #D4AF37 is the mockup's exact "Accent Color".
+     Decorative/border/badge use only at -400/-500 (fails contrast as text
+     or with white text on it); -700 is a darkened text-safe variant for
+     links/labels that still need to read as "gold". */
+  --color-gold-50: #FBF6E7;
+  --color-gold-200: #ECD48A;
+  --color-gold-400: #D4AF37;
+  --color-gold-500: #C29A2E;
+  --color-gold-700: #7A611C;
+
+  /* Sky / Plum: kept as tertiary accents for department-tag variety —
+     blue and violet both sit comfortably in a navy/crimson/gold
+     collegiate palette. */
+  --color-sky-50: #E9F1FA;
+  --color-sky-200: #A9CBE8;
+  --color-sky-500: #3A7AB8;
+  --color-sky-700: #2C6FB0;
+
+  --color-plum-50: #F3ECF7;
+  --color-plum-200: #D3B8E3;
+  --color-plum-500: #8F5FB8;
+  --color-plum-700: #7A4FA0;
+
+  --font-display: "Poppins", "Segoe UI", sans-serif;
+  --font-body: "Inter", "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+
+@layer base {
+  html {
+    font-family: var(--font-body);
+    color: var(--color-ink-900);
+  }
+  body {
+    background-color: var(--color-paper-100);
+  }
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-marigold-500);
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  .input {
+    border-radius: 0.5rem;
+    border: 1px solid var(--color-paper-300);
+    background-color: var(--color-paper-100);
+    padding: 0.625rem 1rem;
+    color: var(--color-ink-900);
+    outline: none;
+    transition: box-shadow 0.15s, border-color 0.15s, background-color 0.15s;
+  }
+  .input:focus {
+    background-color: white;
+    border-color: var(--color-ink-900);
+    box-shadow: 0 0 0 3px rgba(0, 33, 71, 0.15);
+  }
+  .input-error {
+    border-color: var(--color-marigold-500) !important;
+    background-color: white;
+  }
+  .input-error:focus {
+    box-shadow: 0 0 0 3px var(--color-marigold-50);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

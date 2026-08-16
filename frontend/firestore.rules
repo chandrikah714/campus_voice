@@ -1,0 +1,98 @@
+rules_version = '2';
+
+// This project had no firestore.rules file at all before this change,
+// meaning Firestore was either running on default test-mode rules (wide
+// open, time-limited, and expires) or whatever was last configured by hand
+// in the Console — in either case, not something checked into source
+// control or reviewed. That's also a plausible contributor to "login hangs
+// for staff/student": if the deployed rules deny reads on `users/{uid}`
+// for anyone but the account owner, or expired outright, the app's
+// AuthContext profile listener gets a permission-denied error and — before
+// this same round of fixes — had no way to surface that to the user.
+//
+// Deploy with: firebase deploy --only firestore:rules
+// (requires "firestore": { "rules": "firestore.rules" } in firebase.json,
+// already added)
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    function myRole() {
+      return isSignedIn()
+        ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role
+        : null;
+    }
+
+    function isAdmin() {
+      return myRole() == "admin";
+    }
+
+    function isStaff() {
+      return myRole() == "staff";
+    }
+
+    function myDepartment() {
+      return isSignedIn()
+        ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.department
+        : null;
+    }
+
+    // Each user can read/update their own profile; admins can read/update
+    // any profile (role changes, etc). Nobody can delete via the client —
+    // ManageUsers' "Remove" only deletes the Firestore doc, which is
+    // already client-side; if you want hard account deletion too, that
+    // needs a Cloud Function with the Admin SDK.
+    match /users/{uid} {
+      allow read: if isOwner(uid) || isAdmin();
+      allow update: if isOwner(uid) || isAdmin();
+      allow create: if isSignedIn(); // registration + admin-created accounts
+      allow delete: if isAdmin();
+    }
+
+    // Anyone signed in can read the complaint board (it's a public campus
+    // feed by design — see COMPLAINT_ROUTING.md). Only the reporter can
+    // create. Status/department changes are restricted to staff of the
+    // matching department or an admin — but voting and commenting need to
+    // work for *any* signed-in user, so those two fields are allowed
+    // through a separate, narrower clause that checks only they changed.
+    match /complaints/{complaintId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update: if isAdmin() ||
+        (isStaff() && myDepartment() == resource.data.department) ||
+        (isSignedIn() &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(["votes", "discussions"]));
+      allow delete: if isAdmin();
+    }
+
+    // Notifications are per-user; only the owning user (or the Admin SDK,
+    // which bypasses rules entirely) can read/write theirs.
+    match /notifications/{notifId} {
+      allow read, update: if isOwner(resource.data.userId);
+      allow create: if isSignedIn();
+      allow delete: if isOwner(resource.data.userId) || isAdmin();
+    }
+
+    // Email delivery logs and system alerts are written only by Cloud
+    // Functions (Admin SDK, bypasses rules). Only admins can read them from
+    // the client; nobody can write from the client.
+    match /emailLogs/{logId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    match /systemAlerts/{alertId} {
+      allow read: if isAdmin();
+      allow update: if isAdmin(); // acknowledging an alert
+      allow create, delete: if false;
+    }
+  }
+}
